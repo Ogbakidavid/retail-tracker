@@ -1,12 +1,15 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingUp, TrendingDown, Receipt } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
-import ExpenseChart from "@/components/ExpenseChart";
 import IncomeExpenseChart from "@/components/IncomeExpenseChart";
+import ExpenseChart from "@/components/ExpenseChart";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogIn } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -19,148 +22,76 @@ interface Transaction {
 }
 
 const Index = () => {
-  const [showTransactionForm, setShowTransactionForm] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      type: 'income',
-      amount: 2500,
-      description: 'Client payment - Website design',
-      category: 'Services',
-      date: '2024-01-15'
-    },
-    {
-      id: '2',
-      type: 'expense',
-      amount: 450,
-      description: 'Office supplies and equipment',
-      category: 'Supplies',
-      date: '2024-01-14'
-    },
-    {
-      id: '3',
-      type: 'expense',
-      amount: 85,
-      description: 'Business lunch meeting',
-      category: 'Meals',
-      date: '2024-01-13'
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
     }
-  ]);
+  }, [user, navigate]);
 
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const netProfit = totalIncome - totalExpenses;
-
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString()
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-    setShowTransactionForm(false);
-  };
-
-  if (showTransactionForm) {
-    return (
-      <TransactionForm 
-        onSave={addTransaction}
-        onCancel={() => setShowTransactionForm(false)}
-      />
-    );
+  if (user) {
+    return null; // Will redirect to dashboard
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-md mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Business Tracker</h1>
-          <p className="text-gray-600">Track your income & expenses</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        <header className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Tally It Easy
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Simple and intuitive expense tracking for everyone
+          </p>
+          <Button 
+            onClick={() => navigate('/auth')} 
+            size="lg"
+            className="flex items-center space-x-2 mx-auto"
+          >
+            <LogIn className="w-5 h-5" />
+            <span>Get Started - Sign In</span>
+          </Button>
+        </header>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 gap-4">
-          <Card className="bg-white shadow-lg border-0 animate-fade-in">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                <DollarSign className="w-4 h-4 mr-2 text-green-600" />
-                Net Profit
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                ${netProfit.toLocaleString()}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <Card className="p-6">
+            <h2 className="text-2xl font-semibold mb-4">Track Your Expenses</h2>
+            <p className="text-gray-600 mb-4">
+              Easily log your income and expenses with our simple form. 
+              Categorize transactions and upload receipts for better organization.
+            </p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <TransactionForm 
+                onTransactionAdded={() => {}} 
+                disabled={true}
+              />
+              <div className="mt-4 text-center text-sm text-gray-500">
+                Sign in to start tracking your transactions
               </div>
-              <p className="text-sm text-gray-500 mt-1">This month</p>
-            </CardContent>
+            </div>
           </Card>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="bg-green-50 border-green-200 shadow-md animate-fade-in">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-700 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  Income
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-800">
-                  ${totalIncome.toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="p-6">
+            <h2 className="text-2xl font-semibold mb-4">Visualize Your Data</h2>
+            <p className="text-gray-600 mb-4">
+              Get insights into your spending patterns with beautiful charts and graphs.
+            </p>
+            <div className="space-y-4">
+              <IncomeExpenseChart transactions={[]} />
+              <ExpenseChart transactions={[]} />
+            </div>
+          </Card>
+        </div>
 
-            <Card className="bg-red-50 border-red-200 shadow-md animate-fade-in">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-700 flex items-center">
-                  <TrendingDown className="w-4 h-4 mr-1" />
-                  Expenses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-800">
-                  ${totalExpenses.toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">Recent Transactions</h2>
+          <TransactionList transactions={[]} />
+          <div className="mt-4 text-center text-sm text-gray-500">
+            Sign in to view your transactions
           </div>
-        </div>
-
-        {/* Charts */}
-        <div className="space-y-4">
-          <IncomeExpenseChart 
-            income={totalIncome} 
-            expenses={totalExpenses} 
-          />
-          <ExpenseChart transactions={transactions} />
-        </div>
-
-        {/* Add Transaction Button */}
-        <Button
-          onClick={() => setShowTransactionForm(true)}
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Transaction
-        </Button>
-
-        {/* Recent Transactions */}
-        <Card className="bg-white shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
-              <Receipt className="w-5 h-5 mr-2" />
-              Recent Transactions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <TransactionList transactions={transactions.slice(0, 5)} />
-          </CardContent>
         </Card>
       </div>
     </div>
