@@ -1,28 +1,16 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import TransactionForm from "@/components/TransactionForm";
+import DemoTransactionForm from "@/components/DemoTransactionForm";
 import TransactionList from "@/components/TransactionList";
 import IncomeExpenseChart from "@/components/IncomeExpenseChart";
 import ExpenseChart from "@/components/ExpenseChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogIn } from "lucide-react";
 
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  description: string;
-  category: string;
-  date: string;
-  receiptUrl?: string;
-}
-
 const Index = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -64,10 +52,7 @@ const Index = () => {
               Categorize transactions and upload receipts for better organization.
             </p>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <TransactionForm 
-                onTransactionAdded={() => {}} 
-                disabled={true}
-              />
+              <DemoTransactionForm />
               <div className="mt-4 text-center text-sm text-gray-500">
                 Sign in to start tracking your transactions
               </div>
@@ -80,7 +65,7 @@ const Index = () => {
               Get insights into your spending patterns with beautiful charts and graphs.
             </p>
             <div className="space-y-4">
-              <IncomeExpenseChart transactions={[]} />
+              <IncomeExpenseChart income={0} expenses={0} />
               <ExpenseChart transactions={[]} />
             </div>
           </Card>
