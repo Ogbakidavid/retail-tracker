@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LogOut, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import AddTransactionForm from '@/components/AddTransactionForm';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -73,12 +74,16 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-          <div className="text-center py-8 text-gray-500">
-            <p>No transactions yet. Start by adding your first transaction!</p>
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <AddTransactionForm />
+          
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Transactions</h2>
+            <div className="text-center py-8 text-gray-500">
+              <p>No transactions yet. Add your first transaction using the form!</p>
+            </div>
+          </Card>
+        </div>
       </main>
     </div>
   );
