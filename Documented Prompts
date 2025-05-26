@@ -1,0 +1,133 @@
+🧠 Lovable AI Project Prompt Documentation – SmartRetail Tracker
+🚀 Project Goal:
+Build a mobile/web app to help small traders track income and expenses using voice or photo input. Powered by Supabase (backend) and Lovable AI (frontend), with bot protection, user auth, and advanced features like charts and file upload.
+
+🛠️ Initial Feature Prompts
+1. Create a voice & photo-based expense/income tracker
+
+“Create a web app where users can track income and expenses using voice or uploaded receipts.”
+
+2. Connect to Supabase
+
+“Connect this app to my Supabase backend project with table transactions that stores: id, user_id, amount, type (income or expense), description, date, and file_url.”
+
+3. Add Supabase authentication
+
+“Enable user authentication using email/password login through Supabase.”
+
+4. Create Transaction Table (SQL)
+
+sql
+Copy
+Edit
+create table transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id),
+  amount numeric,
+  type text check (type in ('income', 'expense')),
+  description text,
+  date timestamp with time zone default now(),
+  file_url text
+);
+5. Add Row-Level Security (RLS) policies
+
+sql
+Copy
+Edit
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own transactions" 
+  ON public.transactions 
+  FOR SELECT 
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own transactions" 
+  ON public.transactions 
+  FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own transactions" 
+  ON public.transactions 
+  FOR UPDATE 
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own transactions" 
+  ON public.transactions 
+  FOR DELETE 
+  USING (auth.uid() = user_id);
+🔒 Authentication & Security Prompts
+6. Enable email confirmation on signup
+
+“Enable email confirmation on signup in Supabase auth settings.”
+
+7. Fix localhost error on confirmation link
+
+“Set correct site URL in Supabase project settings. Use Lovable preview domain instead of localhost.”
+
+8. Enable bot protection with hCaptcha
+
+“Enable hCaptcha for signup and login in Supabase Auth > Bot and Abuse Protection. Use test site key: 10000000-ffff-ffff-ffff-000000000001 for development.”
+
+9. CAPTCHA warning fix
+
+“Replace the test hCaptcha key with production key from hCaptcha.com.”
+
+10. Prompt to Lovable
+
+“Add hCaptcha to signup and login forms using site key: 19727296-1534-4348-b3d8-9a4c142827e8.”
+
+🧩 Bug Fix Prompts
+11. TypeScript Error Fix – onTransactionAdded not found
+
+“Fix missing prop onTransactionAdded in TransactionForm component.”
+
+✅ Solution: Ensure TransactionFormProps interface includes:
+
+ts
+Copy
+Edit
+interface TransactionFormProps {
+  onTransactionAdded: () => void;
+  disabled: boolean;
+}
+12. TypeScript Error Fix – transactions not found
+
+“Fix missing prop transactions in IncomeExpenseChart component.”
+
+✅ Solution: Update IncomeExpenseChartProps:
+
+ts
+Copy
+Edit
+interface IncomeExpenseChartProps {
+  transactions: Transaction[];
+}
+Or if passing income/expense instead:
+
+ts
+Copy
+Edit
+interface IncomeExpenseChartProps {
+  income: number;
+  expenses: number;
+}
+📊 Chart Prompt for Income vs Expense
+“Add a bar chart to visualize user income vs expenses using recharts.”
+
+✅ Used this chart:
+
+tsx
+Copy
+Edit
+const data = [
+  { name: 'Income', amount: income, fill: '#22c55e' },
+  { name: 'Expenses', amount: expenses, fill: '#ef4444' }
+];
+📤 Upload Features Prompt
+“Allow users to upload images or audio receipts and store them in Supabase Storage. Save file URL in transactions.file_url column.”
+
+🔐 MFA and Password Security Prompts
+13. Leaked Password Fix (free plan)
+
+Couldn’t enable via ALTER SYSTEM due to free plan limitations.
+Workaround: Use strong password rules, CAPTCHA, and enable email verification.
