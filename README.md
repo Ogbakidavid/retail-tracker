@@ -1,73 +1,116 @@
-# Welcome to your Lovable project
+# 🧾 SmartRetail Tracker
 
-## Project info
+A mobile/web app that helps small business owners track **income and expenses** using **voice** or **photo input**, powered by **Supabase** (backend) and **Lovable AI** (frontend).
 
-**URL**: https://lovable.dev/projects/2194d803-d27f-48c3-be6a-1041bbc418cf
+---
 
-## How can I edit this code?
+## 📦 Features
 
-There are several ways of editing your application.
+- 📸 Upload receipts or record voice notes to log transactions
+- 📊 Income vs Expense bar chart visualization
+- 🔐 User authentication via Supabase (email & password)
+- 🧠 CAPTCHA protection using hCaptcha
+- 🗄️ Supabase DB with RLS (Row-Level Security)
+- 💾 File storage via Supabase bucket
+- ⚙️ Automatic email confirmation and password strength check
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2194d803-d27f-48c3-be6a-1041bbc418cf) and start prompting.
+## 🚀 Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: Lovable AI (No-code/Low-code AI tool)
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Chart**: Recharts (React charting library)
+- **CAPTCHA**: hCaptcha
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🧱 Database Schema
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```sql
+create table transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id),
+  amount numeric,
+  type text check (type in ('income', 'expense')),
+  description text,
+  date timestamp with time zone default now(),
+  file_url text
+); 
 
-Follow these steps:
+🔐 ##Supabase Auth Setup
+Enable email confirmation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Enable Row-Level Security with these policies:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+sql
+Copy
+Edit
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
-# Step 3: Install the necessary dependencies.
-npm i
+CREATE POLICY "Users can view their own transactions" 
+  ON public.transactions 
+  FOR SELECT 
+  USING (auth.uid() = user_id);
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+CREATE POLICY "Users can create their own transactions" 
+  ON public.transactions 
+  FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
 
-**Edit a file directly in GitHub**
+CREATE POLICY "Users can update their own transactions" 
+  ON public.transactions 
+  FOR UPDATE 
+  USING (auth.uid() = user_id);
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+CREATE POLICY "Users can delete their own transactions" 
+  ON public.transactions 
+  FOR DELETE 
+  USING (auth.uid() = user_id);
+Under Bot and Abuse Protection, select hCaptcha as your CAPTCHA provider.
 
-**Use GitHub Codespaces**
+Add your production hCaptcha site key in your frontend (Lovable):
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+ts
+Copy
+Edit
+const HCAPTCHA_SITE_KEY = "YOUR-PROD-HCAPTCHA-SITE-KEY";
 
-## What technologies are used for this project?
+📊 Charts Example
+Bar chart for income vs expenses:
 
-This project is built with:
+ts
+Copy
+Edit
+const data = [
+  { name: 'Income', amount: income, fill: '#22c55e' },
+  { name: 'Expenses', amount: expenses, fill: '#ef4444' }
+];
+🐛 Debug Fixes
+TypeScript Error Fix – onTransactionAdded
+Ensure TransactionFormProps interface includes:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+ts
+Copy
+Edit
+interface TransactionFormProps {
+  onTransactionAdded: () => void;
+  disabled: boolean;
+}
+TypeScript Error Fix – transactions not found
+ts
+Copy
+Edit
+interface IncomeExpenseChartProps {
+  income: number;
+  expenses: number;
+}
+🧪 Development Notes
+You must replace the test hCaptcha key with a production key to avoid CAPTCHA failures.
 
-## How can I deploy this project?
+On the free Supabase plan, leaked password protection can't be enabled via ALTER SYSTEM.
 
-Simply open [Lovable](https://lovable.dev/projects/2194d803-d27f-48c3-be6a-1041bbc418cf) and click on Share -> Publish.
+Use strong passwords, enable email verification, and CAPTCHA to mitigate risk.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+👥 Author
+Built by [Your Name] using Supabase and Lovable AI.
