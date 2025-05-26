@@ -8,7 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-const AddTransactionForm = () => {
+interface AddTransactionFormProps {
+  onTransactionAdded?: () => void;
+}
+
+const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -64,6 +68,11 @@ const AddTransactionForm = () => {
       // Reset form
       setAmount('');
       setDescription('');
+      
+      // Call callback to refresh transactions
+      if (onTransactionAdded) {
+        onTransactionAdded();
+      }
     } catch (error) {
       console.error('Error saving transaction:', error);
       toast({

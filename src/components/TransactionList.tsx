@@ -1,15 +1,13 @@
 
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Camera } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface Transaction {
   id: string;
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category: string;
   date: string;
-  receiptUrl?: string;
 }
 
 interface TransactionListProps {
@@ -21,14 +19,24 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
   return (
-    <div className="space-y-2 p-4">
+    <div className="space-y-2 max-h-96 overflow-y-auto">
       {transactions.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No transactions yet</p>
+        <p className="text-gray-500 text-center py-8">No transactions yet. Add your first transaction!</p>
       ) : (
         transactions.map((transaction) => (
           <Card 
@@ -50,22 +58,16 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
                     {transaction.description}
                   </p>
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>{transaction.category}</span>
-                    <span>•</span>
                     <span>{formatDate(transaction.date)}</span>
-                    {transaction.receiptUrl && (
-                      <>
-                        <span>•</span>
-                        <Camera className="w-3 h-3" />
-                      </>
-                    )}
+                    <span>•</span>
+                    <span>{formatTime(transaction.date)}</span>
                   </div>
                 </div>
               </div>
               <div className={`font-bold text-lg ${
                 transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
               }`}>
-                {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
           </Card>

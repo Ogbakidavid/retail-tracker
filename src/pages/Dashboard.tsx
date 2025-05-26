@@ -7,14 +7,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LogOut, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import AddTransactionForm from '@/components/AddTransactionForm';
+import TransactionList from '@/components/TransactionList';
+import { useTransactions } from '@/hooks/useTransactions';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { transactions, isLoading, totalBalance, totalIncome, totalExpenses, refetch } = useTransactions();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
+  };
+
+  const handleTransactionAdded = () => {
+    refetch();
   };
 
   return (
@@ -47,7 +54,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Balance</p>
-                <p className="text-3xl font-bold text-gray-900">$0.00</p>
+                <p className={`text-3xl font-bold ${totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
               <DollarSign className="w-8 h-8 text-green-600" />
             </div>
@@ -57,7 +66,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Income</p>
-                <p className="text-3xl font-bold text-green-600">$0.00</p>
+                <p className="text-3xl font-bold text-green-600">
+                  ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
             </div>
@@ -67,7 +78,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                <p className="text-3xl font-bold text-red-600">$0.00</p>
+                <p className="text-3xl font-bold text-red-600">
+                  ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
               <TrendingDown className="w-8 h-8 text-red-600" />
             </div>
@@ -75,13 +88,17 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <AddTransactionForm />
+          <AddTransactionForm onTransactionAdded={handleTransactionAdded} />
           
           <Card className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-            <div className="text-center py-8 text-gray-500">
-              <p>No transactions yet. Add your first transaction using the form!</p>
-            </div>
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Loading transactions...</p>
+              </div>
+            ) : (
+              <TransactionList transactions={transactions} />
+            )}
           </Card>
         </div>
       </main>
