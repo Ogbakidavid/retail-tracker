@@ -1,20 +1,27 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validatePassword } from '@/utils/passwordValidation';
+import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Replace with your actual hCaptcha site key
+  const HCAPTCHA_SITE_KEY = "10000000-ffff-ffff-ffff-000000000001"; // This is a test key
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +29,29 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        // Validate password for signup
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+          toast({
+            title: "Password validation failed",
+            description: passwordValidation.errors.join(', '),
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Check captcha for signup
+        if (!captchaToken) {
+          toast({
+            title: "Captcha required",
+            description: "Please complete the captcha verification.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -52,6 +82,21 @@ const Auth = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setCaptchaToken(null);
+  };
+
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    resetForm();
   };
 
   return (
@@ -90,14 +135,26 @@ const Auth = () => {
               required
               className="mt-1"
               placeholder="Enter your password"
-              minLength={6}
+              minLength={isSignUp ? 8 : 6}
             />
+            {isSignUp && <PasswordStrengthIndicator password={password} />}
           </div>
+
+          {isSignUp && (
+            <div className="flex justify-center">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={handleCaptchaChange}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+            </div>
+          )}
 
           <Button
             type="submit"
             className="w-full"
-            disabled={loading}
+            disabled={loading || (isSignUp && (!captchaToken || !validatePassword(password).isValid))}
           >
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </Button>
@@ -106,7 +163,7 @@ const Auth = () => {
         <div className="mt-6 text-center">
           <button
             type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={toggleAuthMode}
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             {isSignUp 
