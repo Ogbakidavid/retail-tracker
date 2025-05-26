@@ -20,14 +20,25 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Replace with your actual hCaptcha site key
-  const HCAPTCHA_SITE_KEY = "10000000-ffff-ffff-ffff-000000000001"; // This is a test key
+  // Your hCaptcha site key
+  const HCAPTCHA_SITE_KEY = "19727296-1534-4348-b3d8-9a4c142827e8";
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Check captcha for both signup and login
+      if (!captchaToken) {
+        toast({
+          title: "Captcha required",
+          description: "Please complete the captcha verification.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       if (isSignUp) {
         // Validate password for signup
         const passwordValidation = validatePassword(password);
@@ -35,17 +46,6 @@ const Auth = () => {
           toast({
             title: "Password validation failed",
             description: passwordValidation.errors.join(', '),
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Check captcha for signup
-        if (!captchaToken) {
-          toast({
-            title: "Captcha required",
-            description: "Please complete the captcha verification.",
             variant: "destructive",
           });
           setLoading(false);
@@ -140,21 +140,19 @@ const Auth = () => {
             {isSignUp && <PasswordStrengthIndicator password={password} />}
           </div>
 
-          {isSignUp && (
-            <div className="flex justify-center">
-              <HCaptcha
-                sitekey={HCAPTCHA_SITE_KEY}
-                onVerify={handleCaptchaChange}
-                onExpire={() => setCaptchaToken(null)}
-                onError={() => setCaptchaToken(null)}
-              />
-            </div>
-          )}
+          <div className="flex justify-center">
+            <HCaptcha
+              sitekey={HCAPTCHA_SITE_KEY}
+              onVerify={handleCaptchaChange}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          </div>
 
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || (isSignUp && (!captchaToken || !validatePassword(password).isValid))}
+            disabled={loading || !captchaToken || (isSignUp && !validatePassword(password).isValid)}
           >
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </Button>
