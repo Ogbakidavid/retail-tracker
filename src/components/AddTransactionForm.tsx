@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,8 +18,60 @@ const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const handleVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast({
+        title: "Voice input not supported",
+        description: "Your browser doesn't support voice recognition.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      toast({
+        title: "Listening...",
+        description: "Speak your transaction description",
+      });
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setDescription(transcript);
+      setIsRecording(false);
+      toast({
+        title: "Voice captured!",
+        description: "Transaction description updated",
+      });
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+      toast({
+        title: "Voice input failed",
+        description: "Please try again or type manually",
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,16 +180,32 @@ const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => 
             />
           </div>
 
-          {/* Description */}
+          {/* Description with Voice Input */}
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What was this transaction for?"
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What was this transaction for?"
+                className="flex-1"
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleVoiceInput}
+                className={`${isRecording ? 'bg-red-100 border-red-300' : ''}`}
+              >
+                {isRecording ? (
+                  <MicOff className="w-4 h-4 text-red-600" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Submit Button */}
