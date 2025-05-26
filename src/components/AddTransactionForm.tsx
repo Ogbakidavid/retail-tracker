@@ -1,10 +1,9 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, Camera, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +18,8 @@ const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => 
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -71,6 +72,80 @@ const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => 
     };
 
     recognition.start();
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingImage(true);
+    
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Image = e.target?.result as string;
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('extract-text-from-image', {
+            body: { image: base64Image }
+          });
+
+          if (error) throw error;
+
+          if (data.success && data.details) {
+            if (data.details.amount) {
+              setAmount(data.details.amount);
+            }
+            if (data.details.description) {
+              setDescription(data.details.description);
+            }
+            
+            toast({
+              title: "Receipt processed!",
+              description: "Transaction details extracted from image",
+            });
+          } else {
+            toast({
+              title: "Could not extract details",
+              description: "Please enter transaction details manually",
+              variant: "destructive"
+            });
+          }
+        } catch (error) {
+          console.error('OCR processing error:', error);
+          toast({
+            title: "Failed to process image",
+            description: "Please try again or enter details manually",
+            variant: "destructive"
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('File reading error:', error);
+      toast({
+        title: "Failed to read file",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +238,33 @@ const AddTransactionForm = ({ onTransactionAdded }: AddTransactionFormProps) => 
             >
               Income
             </Button>
+          </div>
+
+          {/* Photo Upload for OCR */}
+          <div>
+            <Label>Receipt Photo (Optional)</Label>
+            <div className="flex gap-2 mt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingImage}
+                className="flex-1"
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                {isProcessingImage ? 'Processing...' : 'Scan Receipt'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Upload a receipt to automatically extract transaction details
+            </p>
           </div>
 
           {/* Amount */}
